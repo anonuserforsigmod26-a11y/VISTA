@@ -1,0 +1,67 @@
+# name: test/sql/storage/attach_filter_pushdown.test
+# description: Test experimental filter pushdown
+# group: [storage]
+
+require postgres_scanner
+
+require-env POSTGRES_TEST_DATABASE_AVAILABLE
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+ATTACH 'dbname=postgresscanner' AS s1 (TYPE POSTGRES)
+
+statement ok
+CREATE OR REPLACE TABLE s1.filter_pushdown(i INTEGER)
+
+statement ok
+INSERT INTO s1.filter_pushdown FROM range(1000000)
+
+statement ok
+SET pg_experimental_filter_pushdown=true
+
+query I
+SELECT * FROM s1.filter_pushdown WHERE i=52525
+----
+52525
+
+query I
+SELECT * FROM s1.filter_pushdown WHERE i IN (32, 52525, 777777) ORDER BY ALL
+----
+32
+52525
+777777
+
+statement ok
+CREATE OR REPLACE TABLE s1.filter_pushdown_types(v VARCHAR, d DATE);
+
+statement ok
+INSERT INTO s1.filter_pushdown_types VALUES ('hello world', DATE '1992-01-01'), (NULL, NULL), ('I''m here', DATE '2020-01-01');
+
+query I
+SELECT v FROM s1.filter_pushdown_types WHERE v IN ('hello world', 'I''m here') ORDER BY ALL
+----
+I'm here
+hello world
+
+query I
+SELECT v FROM s1.filter_pushdown_types WHERE v='I''m here'
+----
+I'm here
+
+query I
+SELECT d FROM s1.filter_pushdown_types WHERE d=DATE '1992-01-01'
+----
+1992-01-01
+
+query I
+SELECT * FROM s1.composites_of_composites WHERE b.k < 8
+----
+{'a': {'i': 1, 'j': 2}, 'k': 3}
+{'a': {'i': 4, 'j': 5}, 'k': 6}
+
+query I
+SELECT * FROM s1.composites_of_composites WHERE b.a.j = 5
+----
+{'a': {'i': 4, 'j': 5}, 'k': 6}

@@ -1,0 +1,15 @@
+# name: test/sql/storage/attach_timeout_error.test
+# description: Attach with timeout error
+# group: [storage]
+
+require postgres_scanner
+
+require-env POSTGRES_TEST_DATABASE_AVAILABLE
+
+statement ok
+ATTACH 'dbname=postgresscanner options=''-c statement_timeout=1000''' AS s (TYPE POSTGRES, READ_ONLY);
+
+statement error
+SELECT * FROM postgres_query(s, 'select count(*) from tpch.lineitem, tpch.lineitem t2, tpch.lineitem t3');
+----
+canceling statement due to statement timeout

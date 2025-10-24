@@ -1,0 +1,20 @@
+# name: test/sql/storage/attach_top_n.test
+# description: Attach with Top-N queries
+# group: [storage]
+
+require postgres_scanner
+
+require-env POSTGRES_TEST_DATABASE_AVAILABLE
+
+statement ok
+ATTACH 'dbname=postgresscanner' AS s (TYPE POSTGRES);
+
+query IIIIIIII
+select * from s.pg_numtypes order by smallint_col limit 1
+----
+false	-42	-42	-42	-42.01	-42.01	-42.0	-42.01
+
+query IIIIIIII
+select * from s.pg_numtypes where smallint_col >= 0 order by 2 limit 1
+----
+0	0	0	0	0.0	0.0	0.0	0.0

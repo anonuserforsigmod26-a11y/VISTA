@@ -1,0 +1,86 @@
+# name: test/sql/storage/attach_postgis.test
+# description: Test PostGIS integration
+# group: [storage]
+
+require postgres_scanner
+
+require-env POSTGRES_TEST_DATABASE_AVAILABLE
+
+# e.g. export SPATIAL_EXTENSION='~/Programs/duckdb-spatial/build/debug/extension/spatial/spatial.duckdb_extension'
+require-env SPATIAL_EXTENSION
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+ATTACH 'dbname=postgres' AS s (TYPE POSTGRES);
+
+# make sure PostGIS is installed
+statement ok
+SELECT * FROM postgres_query(s, 'SELECT PostGIS_Version()')
+
+# spatial not loaded yet
+statement error
+CREATE OR REPLACE TABLE s.my_points(geom GEOMETRY);
+----
+spatial
+
+statement ok
+LOAD '${SPATIAL_EXTENSION}'
+
+# create a table
+statement ok
+CREATE OR REPLACE TABLE s.my_points(geom GEOMETRY);
+
+# insert data
+statement ok
+INSERT INTO s.my_points VALUES (ST_Point(1,1));
+
+# try binary copy
+query I
+SELECT geom::VARCHAR FROM s.my_points;
+----
+POINT (1 1)
+
+# text copy
+statement ok
+SET pg_use_binary_copy=false;
+
+statement ok
+INSERT INTO s.my_points VALUES (ST_Point(2,2));
+
+query I
+SELECT geom::VARCHAR FROM s.my_points;
+----
+POINT (1 1)
+POINT (2 2)
+
+# make sure Postgres itself can read the values
+query I
+SELECT * FROM postgres_query(s, 'SELECT ST_AsText(geom) FROM my_points')
+----
+POINT(1 1)
+POINT(2 2)
+
+# re-attach
+statement ok
+DETACH s
+
+statement ok
+ATTACH 'dbname=postgres' AS s (TYPE POSTGRES);
+
+query I
+SELECT geom::VARCHAR FROM s.my_points;
+----
+POINT (1 1)
+POINT (2 2)
+
+# update
+statement ok
+UPDATE s.my_points SET geom=ST_Point(ST_X(geom::GEOMETRY) + 10, ST_Y(geom::GEOMETRY) + 10)
+
+query I
+SELECT geom::VARCHAR FROM s.my_points;
+----
+POINT (11 11)
+POINT (12 12)

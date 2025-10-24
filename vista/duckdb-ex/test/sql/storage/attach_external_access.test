@@ -1,0 +1,15 @@
+# name: test/sql/storage/attach_external_access.test
+# description: Test that we cannot attach new databases if external access is disabled
+# group: [storage]
+
+require postgres_scanner
+
+require-env POSTGRES_TEST_DATABASE_AVAILABLE
+
+statement ok
+SET enable_external_access=false
+
+statement error
+ATTACH 'dbname=postgresscanner' AS simple (TYPE POSTGRES)
+----
+disabled through configuration

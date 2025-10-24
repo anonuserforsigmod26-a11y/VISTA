@@ -1,0 +1,9 @@
+*.o
+*.so
+cscope.*
+tags
+*.swp
+test
+.vscode
+compile_commands.json
+.cache

@@ -1,0 +1,13 @@
+{
+	"files.associations": {
+		"relfilenode.h": "c",
+		"buf_internals.h": "c",
+		"vista_seqlock.h": "c",
+		"vista_flushworker.h": "c",
+		"vista_freelist.h": "c",
+		"commit_ts.h": "c",
+		"bufmgr.h": "c",
+		"snapmgr.h": "c",
+		"xlog.h": "c"
+	}
+}

@@ -1,0 +1,12 @@
+build
+cmake-build-debug
+.idea
+.DS_Store
+postgres/postgres
+.clang-format
+.clangd
+postgres
+
+cscope.*
+compile_commands.json
+.cache

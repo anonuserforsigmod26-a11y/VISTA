@@ -1,0 +1,39 @@
+# name: test/sql/storage/attach_upper_case.test
+# description: Test modifying an upper-case table
+# group: [storage]
+
+require postgres_scanner
+
+require-env POSTGRES_TEST_DATABASE_AVAILABLE
+
+statement ok
+PRAGMA enable_verification
+
+statement ok
+ATTACH 'dbname=postgresscanner' AS s1 (TYPE POSTGRES)
+
+statement ok
+USE s1
+
+statement ok
+DROP SCHEMA IF EXISTS SCHEM01 CASCADE
+
+statement ok
+CREATE SCHEMA SCHEM01
+
+statement ok
+create or replace table SCHEM01.TAB01(COL01 VARCHAR);
+
+statement ok
+insert into SCHEM01.TAB01 values ('abc')
+
+statement ok
+update SCHEM01.TAB01 set COL01='zxcv'
+
+query I
+SELECT COL01 FROM SCHEM01.TAB01
+----
+zxcv
+
+statement ok
+truncate SCHEM01.tab01

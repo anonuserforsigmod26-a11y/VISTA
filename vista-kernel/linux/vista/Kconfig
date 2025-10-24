@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-2.0-only
+menuconfig VISTA
+	tristate "VISTA"
+	help
+	  Enable vista
+
+if VISTA
+config VISTA_DEBUG
+	bool "VISTA debug mode"
+	default n
+endif
