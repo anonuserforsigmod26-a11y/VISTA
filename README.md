@@ -1,10 +1,15 @@
-# Supplementary Material for "Translytical Processing via DB-OS Co-designed Buffer: Cross-Engine Isolation and Instant Update Visibility for HTAP" (`VISTA`)
+# Artifact for "Translytical Processing via DB-OS Co-designed Buffer: Cross-Engine Isolation and Instant Update Visibility for HTAP" (`VISTA`)
 
-This repository contains the supplementary material for our paper, "Translytical Processing via DB-OS Co-designed Buffer: Cross-Engine Isolation and Instant Update Visibility for HTAP".
+This repository contains the artifact for our paper, "Translytical Processing via DB-OS Co-designed Buffer: Cross-Engine Isolation and Instant Update Visibility for HTAP".
 
 Our System, VISTA, is a DB-OS co-designed buffer virtualization framework that enables efficient, single-node Hybrid Transactional/Analytical Processing (HTAP). It provides strong performance isolation between engines and instant update visibility, eliminating the need for traditional ETL or log shipping pipelines.
 
-In this supplementary material, you could find the code and scripts for VISTA and its evaluation.
+VISTA features:
+* OS-assisted virtual memory remapping for real-time consistent view
+* Virtual memory segmentation for performance isolation
+* Runtime for data format conversion and caching
+
+In this artifact, you could find the code and scripts for VISTA and its evaluation.
 
 ## Directory Structure
 
@@ -16,13 +21,10 @@ The repository is organized as follows:
     *   `duckdb-ex/`: The DuckDB source code with VISTA extension.
     *   `lib-scan/`: The upper-level library used by the OLAP engine to scan and convert data from remapped segments.
     *   `libvista/`: The lower-level library providing the core VISTA runtime for the both engines.
-
-<span style="color:red">   
 *   `evaluation/`: Scripts and configurations for running the performance evaluations.
     *   `olap-only/`: Scripts for running the OLAP-only baseline experiments.
     *   `olap-with-oltp/`: Scripts for running the full HTAP experiments with both OLTP and OLAP workloads.
 *   `scripts/`: Helper scripts for building the dataset, setting up the different system configurations (VISTA, vanilla PostgreSQL, etc.), and managing the server.
-</span>
 
 
 ## Code Overview
@@ -161,7 +163,7 @@ FUNCTION flush_segment_and_update_bitmap()
 END FUNCTION
 ```
 
-### OLAP Side (`vista/duckdb-ex/`, `vista/lib-scan/`, and `vista/libvista`)
+### OLAP-Side Integration (`vista/duckdb-ex/`, `vista/lib-scan/`, and `vista/libvista`)
 
 The OLAP engine is DuckDB with a custom extension that can scan data from PostgreSQL via VISTA. The scan logic integrates a format cache to avoid repeated data conversion.
 
@@ -251,14 +253,21 @@ The bridge between the OLAP engine and the freshly remapped OLTP data is `vista_
 
 ### 1. Build and Install the VISTA OS Module
 
+VISTA uses the Linux kernel v6.12.
+
 ```bash
 cd vista-kernel/linux
-# Follow standard kernel compilation and installation procedures
-# For example:
-make menuconfig # Ensure huge page support is enabled
+
+make oldconfig
+make menuconfig
+# Ensure following configs are enabled
+#  CONFIG_VISTA
+#  CONFIG_TRANSPARENT_HUGEPAGE (madvise)
 make -j$(nproc)
-sudo make modules_install
-sudo make install
+make modules -j$(nproc)
+make modules_install -j$(nproc)
+make headers -j$(nproc)
+make headers_install INSTALL_HDR_PATH=/usr
 ```
 **Note:** You will need to reboot your system to use the new kernel.
 
